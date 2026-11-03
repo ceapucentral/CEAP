@@ -1,7 +1,7 @@
 {
-  "name": "CEAP 2027 - Portal Universitario",
+  "name": "CEAP ucentral",
   "short_name": "CEAP 2027",
-  "description": "Plataforma universitaria de noticias, convocatorias, actividades y talleres.",
+  "description": "Plataforma oficial CEAP UCEN: noticias, convocatorias, actividades y talleres.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
