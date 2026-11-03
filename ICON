@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="nexusGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="50%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#0a192f"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#nexusGrad)"/>
+  <!-- Birrete Universitario y Nodos de Conexión -->
+  <path d="M256 120 L416 190 L256 260 L96 190 Z" fill="#ffffff" opacity="0.95"/>
+  <path d="M160 230 V310 C160 350 256 380 256 380 C256 380 352 350 352 310 V230" fill="none" stroke="#38bdf8" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="256" cy="380" r="16" fill="#38bdf8"/>
+  <circle cx="160" cy="310" r="12" fill="#ffffff"/>
+  <circle cx="352" cy="310" r="12" fill="#ffffff"/>
+</svg>
