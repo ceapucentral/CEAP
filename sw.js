@@ -1,4 +1,4 @@
-const CACHE_NAME = 'campusnexus-v1';
+const CACHE_NAME = 'CEAP ucentral-v1';
 const STATIC_ASSETS = [
   './',
   './index.html',
