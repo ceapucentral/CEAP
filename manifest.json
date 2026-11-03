@@ -1,6 +1,6 @@
 {
-  "name": "CampusNexus - Portal Universitario",
-  "short_name": "CampusNexus",
+  "name": "CEAP 2027 - Portal Universitario",
+  "short_name": "CEAP 2027",
   "description": "Plataforma universitaria de noticias, convocatorias, actividades y talleres.",
   "start_url": "./index.html",
   "scope": "./",
