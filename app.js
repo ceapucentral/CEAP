@@ -1,149 +1,169 @@
 /**
- * CampusNexus - Aplicación Universitaria PWA
- * Arquitectura modular autónoma sin dependencias de pago.
+ * CEAP UCEN - Plataforma Universitaria PWA
+ * Centro de Estudiantes / Universidad Central
  */
 
-// --- 1. ESTADO GLOBAL Y PERSISTENCIA ---
-const DEFAULT_DOMAIN = '@ucen.cl'; // Dominio base configurable desde el panel de admin
+// --- 1. CONFIGURACIÓN DE DOMINIO Y ESTADO GLOBAL ---
+const DEFAULT_DOMAIN = '@ucen.cl';
 
 const state = {
   authorizedDomain: localStorage.getItem('cn_domain') || DEFAULT_DOMAIN,
   currentUser: JSON.parse(localStorage.getItem('cn_user')) || null,
-  activeCategory: 'regional',
+  activeCategory: 'nacional',
   news: [],
   convocatorias: JSON.parse(localStorage.getItem('cn_convocatorias')) || [
     {
       id: 'c1',
       title: 'Beca de Mantención y Arancel Regional',
-      org: 'Gobierno Regional de Coquimbo',
+      org: 'Gobierno Regional de Coquimbo - UCEN',
       type: 'Becas',
       deadline: '2026-11-30',
       desc: 'Subsidio económico para estudiantes residentes de La Serena, Coquimbo, Ovalle e interior.',
-      link: 'https://www.gobiernogestion.cl',
+      link: 'https://www.ucen.cl',
       status: 'vigente'
     },
     {
       id: 'c2',
       title: 'Práctica Profesional en Biotecnología y Recursos Hídricos',
-      org: 'Centro de Estudios Avanzados en Zonas Áridas (CEAZA)',
+      org: 'CEAZA / Convenio UCEN',
       type: 'Prácticas',
       deadline: '2026-12-15',
-      desc: 'Convocatoria abierta para estudiantes de último año en áreas científicas e ingeniería.',
-      link: 'https://www.ceaza.cl',
+      desc: 'Convocatoria abierta para estudiantes de último año en áreas científicas y sociales.',
+      link: 'https://www.ucen.cl',
       status: 'vigente'
     }
   ],
   actividades: [
     {
       id: 'a1',
-      title: 'Congreso de Innovación Social y Sustentabilidad',
-      date: '2026-11-12 10:00',
-      location: 'Aula Magna del Campus Central',
+      title: 'Asamblea General de Estudiantes CEAP UCEN',
+      date: '2026-11-12 13:00',
+      location: 'Patio Central / Aula Magna UCEN La Serena',
       type: 'academico',
-      desc: 'Encuentro con ponencias de investigadores regionales y nacionales.',
-      organizer: 'Dirección de Vinculación con el Medio'
+      desc: 'Encuentro estudiantil para discusión de proyectos y presupuesto participativo.',
+      organizer: 'CEAP UCEN'
     },
     {
       id: 'a2',
-      title: 'Torneo Interfacultades de Futsal y Vóleibol',
-      date: '2026-11-18 16:30',
-      location: 'Gimnasio Polideportivo Universitario',
-      type: 'deportivo',
-      desc: 'Competencia deportiva semestral de la comunidad estudiantil.',
-      organizer: 'Asociación de Estudiantes'
+      title: 'Jornada Cultural y Feria del Libro Universitario',
+      date: '2026-11-20 11:00',
+      location: 'Sede La Serena',
+      type: 'cultural',
+      desc: 'Exposición artística, música en vivo y conversatorio de autores regionales.',
+      organizer: 'Vocalía de Cultura CEAP'
     }
   ],
+  // TALLERES OFICIALES CEAP UCEN
   talleres: [
     {
-      id: 't1',
-      name: 'Oratoria, Debate y Liderazgo Público',
-      instructor: 'Mg. Roberto San Martín',
-      day: 'Lunes',
-      dayIndex: 1,
-      start: '16:00',
-      end: '17:30',
-      room: 'Sala 302 - Edificio A',
+      id: 't-voleibol',
+      name: 'Taller de Vóleibol',
+      instructor: 'Coordinación de Deportes',
+      day: 'Martes',
+      start: '15:45',
+      end: '17:00',
+      room: 'Gimnasio',
       slots: 25,
-      enrolled: 18
-    },
-    {
-      id: 't2',
-      name: 'Desarrollo de Software y Robótica con Arduino',
-      instructor: 'Ing. Carolina Morales',
-      day: 'Miércoles',
-      dayIndex: 3,
-      start: '14:30',
-      end: '16:30',
-      room: 'Laboratorio de Computación 2',
-      slots: 20,
-      enrolled: 20
-    },
-    {
-      id: 't3',
-      name: 'Taller de Teatro Universitario y Expresión Corporal',
-      instructor: 'Prof. Macarena Valenzuela',
-      day: 'Viernes',
-      dayIndex: 5,
-      start: '17:00',
-      end: '19:00',
-      room: 'Salón de Actos',
-      slots: 30,
       enrolled: 12
+    },
+    {
+      id: 't-futsal-varones',
+      name: 'Taller de Futsal Varones',
+      instructor: 'Coordinación de Deportes',
+      day: 'Martes',
+      start: '17:00',
+      end: '18:30',
+      room: 'Gimnasio',
+      slots: 25,
+      enrolled: 17
+    },
+    {
+      id: 't-musica-canto',
+      name: 'Taller de Instrumentos y Canto',
+      instructor: 'Vocalía de Cultura',
+      day: 'Miércoles',
+      start: '18:00',
+      end: '19:30',
+      room: 'Salón GHU',
+      slots: 20,
+      enrolled: 9
+    },
+    {
+      id: 't-futsal-damas',
+      name: 'Taller de Futsal Damas',
+      instructor: 'Coordinación de Deportes',
+      day: 'Jueves',
+      start: '17:15',
+      end: '18:45',
+      room: 'Gimnasio',
+      slots: 25,
+      enrolled: 14
     }
   ]
 };
 
-// --- 2. FUENTES RSS GRATUITAS (Regionales, Nacionales e Internacionales) ---
+// --- 2. FILTRADO TEMÁTICO DE NOTICIAS ---
+// Solo se admiten estas temáticas para Chile y Educación
+const TEMAS_PERMITIDOS = {
+  'Educación': ['educación', 'universidad', 'cruch', 'mineduc', 'estudiante', 'paes', 'arancel', 'gratuidad', 'beca', 'profesor', 'docente', 'académic'],
+  'Política': ['política', 'congreso', 'senado', 'diputad', 'gobierno', 'reforma', 'ley', 'ministr', 'constituc', 'democracia', 'plebiscito', 'eleccion'],
+  'Ciencias': ['ciencia', 'científic', 'investigación', 'ceaza', 'astronomía', 'tecnología', 'conicyt', 'anid', 'cambio climático', 'medioambiente'],
+  'Salud': ['salud', 'minsal', 'fonasa', 'hospital', 'médic', 'vacuna', 'salud mental', 'enfermedad', 'bienestar', 'clínic'],
+  'Equidad de Género': ['género', 'mujer', 'mujeres', 'feminism', 'paridad', 'diversidad', 'disidencias', 'violencia de género', 'derechos de la mujer'],
+  'Cultura y Artes': ['cultura', 'arte', 'artes', 'teatro', 'cine', 'música', 'libro', 'literatura', 'patrimonio', 'museo', 'exposición', 'danza']
+};
+
+const KEYWORDS_IMPORTANT = [
+  'urgente', 'alerta', 'comunicado', 'rectoría', 'suspensión',
+  'paro', 'ucen', 'admisión', 'gratuidad', 'beca bicentenario',
+  'la serena', 'coquimbo'
+];
+
 const RSS_SOURCES = {
-  regional: [
-    { name: 'Diario El Día (La Serena/Coquimbo)', url: 'https://www.diarioeldia.cl/feed' },
-    { name: 'BioBioChile Región de Coquimbo', url: 'https://www.biobiochile.cl/lista/categorias/region-de-coquimbo/rss' }
-  ],
   nacional: [
-    { name: 'Cooperativa Educación y Sociedad', url: 'https://www.cooperativa.cl/noticias/site/tax/port/all/rss____1.xml' },
-    { name: 'El Mostrador Cultura y Ciencia', url: 'https://www.elmostrador.cl/cultura/feed/' }
+    { name: 'Cooperativa Educación y País', url: 'https://www.cooperativa.cl/noticias/site/tax/port/all/rss____1.xml' },
+    { name: 'El Mostrador Cultura y Ciencias', url: 'https://www.elmostrador.cl/cultura/feed/' },
+    { name: 'BioBioChile Nacional', url: 'https://www.biobiochile.cl/lista/categorias/nacional/rss' }
+  ],
+  regional: [
+    { name: 'Diario El Día (Región de Coquimbo)', url: 'https://www.diarioeldia.cl/feed' },
+    { name: 'BioBio Región de Coquimbo', url: 'https://www.biobiochile.cl/lista/categorias/region-de-coquimbo/rss' }
   ],
   internacional: [
     { name: 'BBC Mundo Noticias', url: 'https://feeds.bbci.co.uk/mundo/rss.xml' }
   ]
 };
 
-// Proxy CORS gratuito y sin registros para consumir RSS directamente en el navegador
 const CORS_PROXY = 'https://api.allorigins.win/get?url=';
 
-// --- 3. INICIALIZACIÓN DE SERVICE WORKER Y PWA ---
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js')
-    .then(() => console.log('PWA Service Worker instalado'))
-    .catch((err) => console.error('Error al registrar Service Worker:', err));
+// --- 3. EXTRACCIÓN Y PROCESAMIENTO RSS ---
+function detectarTemaYFiltro(texto, categoria) {
+  if (categoria !== 'nacional') {
+    return { aceptada: true, subcategoria: 'Actualidad' };
+  }
+
+  const textoMin = texto.toLowerCase();
+
+  // Descartar automáticamente noticias policiales o farándula
+  const descartar = ['homicidio', 'balead', 'apuñala', 'asaltan', 'detienen a sujeto', 'farándula', 'reality'];
+  if (descartar.some(p => textoMin.includes(p))) {
+    return { aceptada: false, subcategoria: null };
+  }
+
+  for (const [tema, palabras] of Object.entries(TEMAS_PERMITIDOS)) {
+    if (palabras.some(p => textoMin.includes(p))) {
+      return { aceptada: true, subcategoria: tema };
+    }
+  }
+
+  return { aceptada: false, subcategoria: null };
 }
 
-let deferredInstallPrompt = null;
-const installBtn = document.getElementById('pwa-install-btn');
-
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  installBtn.style.display = 'block';
-});
-
-installBtn.addEventListener('click', async () => {
-  if (deferredInstallPrompt) {
-    deferredInstallPrompt.prompt();
-    const { outcome } = await deferredInstallPrompt.userChoice;
-    if (outcome === 'accepted') {
-      installBtn.style.display = 'none';
-    }
-    deferredInstallPrompt = null;
-  }
-});
-
-// --- 4. MOTOR DE EXTRACCIÓN Y LIMPIEZA DE NOTICIAS ---
 async function fetchRSS(feedUrl, sourceName, category) {
   try {
     const response = await fetch(`${CORS_PROXY}${encodeURIComponent(feedUrl)}`);
     if (!response.ok) return [];
-    
+
     const data = await response.json();
     const parser = new DOMParser();
     const xmlDoc = parser.parseFromString(data.contents, 'text/xml');
@@ -151,18 +171,22 @@ async function fetchRSS(feedUrl, sourceName, category) {
     const parsedItems = [];
 
     items.forEach((item) => {
-      const title = item.querySelector('title')?.textContent || 'Sin título';
+      const title = item.querySelector('title')?.textContent || '';
       const link = item.querySelector('link')?.textContent || '#';
       const pubDate = item.querySelector('pubDate')?.textContent || new Date().toISOString();
-      let description = item.querySelector('description')?.textContent || '';
-      
-      // Limpieza de etiquetas HTML en el resumen
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = description;
-      description = tempDiv.textContent.slice(0, 160) + '...';
+      let rawDesc = item.querySelector('description')?.textContent || '';
 
-      // Extracción de imagen del elemento <enclosure> o <media:content>
-      let image = item.querySelector('enclosure')?.getAttribute('url') || 
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = rawDesc;
+      const cleanDesc = tempDiv.textContent.slice(0, 160) + '...';
+
+      const filtro = detectarTemaYFiltro(title + ' ' + cleanDesc, category);
+      if (!filtro.aceptada) return;
+
+      const textoCompleto = (title + ' ' + cleanDesc).toLowerCase();
+      const isImportant = KEYWORDS_IMPORTANT.some(word => textoCompleto.includes(word));
+
+      let image = item.querySelector('enclosure')?.getAttribute('url') ||
                   item.querySelector('content')?.getAttribute('url') ||
                   'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=600&auto=format&fit=crop';
 
@@ -171,10 +195,14 @@ async function fetchRSS(feedUrl, sourceName, category) {
         title,
         link,
         source: sourceName,
+        subcategoria: filtro.subcategoria,
         category,
-        date: new Date(pubDate).toLocaleString('es-CL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
-        description,
-        image
+        date: new Date(pubDate).toLocaleString('es-CL', {
+          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+        }),
+        description: cleanDesc,
+        image,
+        isImportant
       });
     });
 
@@ -187,7 +215,9 @@ async function fetchRSS(feedUrl, sourceName, category) {
 
 async function refreshAllNews() {
   const container = document.getElementById('news-grid');
-  container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted);">Sincronizando noticias en tiempo real...</div>`;
+  if (!container) return;
+
+  container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted);">Sincronizando noticias automáticas de CEAP UCEN...</div>`;
 
   const sources = RSS_SOURCES[state.activeCategory] || [];
   let aggregate = [];
@@ -197,33 +227,22 @@ async function refreshAllNews() {
     aggregate = [...aggregate, ...items];
   }
 
-  // Deduplicación por enlace
   const uniqueNews = Array.from(new Map(aggregate.map(item => [item.link, item])).values());
-  
-  if (uniqueNews.length === 0) {
-    // Si la red bloquea el proxy, presentamos noticias universitarias de respaldo verídicas
-    state.news = [
-      {
-        id: 'fallback-1',
-        title: 'Comienza período de postulación a talleres y actividades extracurriculares',
-        link: '#',
-        source: 'Prensa Universitaria',
-        category: 'regional',
-        date: 'Hoy, 10:30',
-        description: 'La Dirección de Asuntos Estudiantiles habilitó los cupos para las actividades deportivas y artísticas semestrales.',
-        image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&auto=format&fit=crop'
-      }
-    ];
-  } else {
-    state.news = uniqueNews;
-  }
+  uniqueNews.sort((a, b) => (b.isImportant ? 1 : 0) - (a.isImportant ? 1 : 0));
 
+  state.news = uniqueNews;
   renderNews();
 }
 
 function renderNews() {
   const container = document.getElementById('news-grid');
+  if (!container) return;
   container.innerHTML = '';
+
+  if (state.news.length === 0) {
+    container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted);">No hay noticias recientes que cumplan los filtros temáticos en este momento.</div>`;
+    return;
+  }
 
   state.news.forEach((item) => {
     const article = document.createElement('article');
@@ -232,13 +251,14 @@ function renderNews() {
       <img src="${item.image}" alt="${item.title}" class="card-img" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=600&auto=format&fit=crop'">
       <div class="card-body">
         <div class="card-meta">
-          <span class="card-tag">${item.source}</span>
+          <span class="card-tag">${item.subcategoria || item.source}</span>
+          ${item.isImportant ? '<span class="card-tag" style="background: #ef4444; color: #ffffff;">⚠️ IMPORTANTE</span>' : ''}
           <span>${item.date}</span>
         </div>
         <h3 class="card-title">${item.title}</h3>
         <p class="card-desc">${item.description}</p>
         <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="margin-top: auto;">
-          Leer Noticia Completa ↗
+          Leer en fuente original ↗
         </a>
       </div>
     `;
@@ -246,9 +266,78 @@ function renderNews() {
   });
 }
 
-// --- 5. RENDERIZADO DE CONVOCATORIAS, ACTIVIDADES Y TALLERES ---
+// --- 4. TALLERES, CONVOCATORIAS Y ACTIVIDADES ---
+function renderTalleres() {
+  const container = document.getElementById('talleres-grid');
+  const tbody = document.getElementById('timetable-body');
+  if (!container || !tbody) return;
+
+  container.innerHTML = '';
+  tbody.innerHTML = '';
+
+  // 1. Tarjetas de talleres con inscripción
+  state.talleres.forEach((t) => {
+    const card = document.createElement('article');
+    card.className = 'card';
+    const isFull = t.enrolled >= t.slots;
+    card.innerHTML = `
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="card-tag">${t.day} • ${t.start} hrs</span>
+          <span style="font-weight: 700; color: ${isFull ? '#ef4444' : '#10b981'}">
+            ${isFull ? 'Agotado' : `${t.slots - t.enrolled} cupos disponibles`}
+          </span>
+        </div>
+        <h3 class="card-title">${t.name}</h3>
+        <p style="font-size: 0.88rem; color: var(--electric-blue); font-weight: 700; margin-bottom: 0.35rem;">📍 Lugar: ${t.room}</p>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem;">Horario: ${t.start} a ${t.end} hrs</p>
+        <button class="btn btn-primary" ${isFull ? 'disabled style="opacity:0.5;"' : ''} onclick="inscribirTaller('${t.id}')">
+          ${isFull ? 'Sin Cupos' : 'Inscribirme al Taller'}
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  // 2. Horario semanal visual
+  const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const row = document.createElement('tr');
+  row.innerHTML = `<td><strong>Talleres</strong></td>` + days.map(day => {
+    const matches = state.talleres.filter(t => t.day.toLowerCase() === day.toLowerCase());
+    if (matches.length > 0) {
+      const itemsHtml = matches.map(m => `
+        <div class="workshop-slot" style="margin-bottom: 0.4rem;">
+          <h5>${m.name}</h5>
+          <p>⏰ ${m.start} hrs</p>
+          <p>📍 ${m.room}</p>
+        </div>
+      `).join('');
+      return `<td>${itemsHtml}</td>`;
+    }
+    return `<td><span style="color: var(--text-muted);">-</span></td>`;
+  }).join('');
+
+  tbody.appendChild(row);
+}
+
+window.inscribirTaller = function(id) {
+  if (!state.currentUser) {
+    alert('Debes iniciar sesión con tu correo institucional @ucen.cl para reservar un cupo.');
+    const modal = document.getElementById('auth-modal');
+    if (modal) modal.classList.add('active');
+    return;
+  }
+  const workshop = state.talleres.find(t => t.id === id);
+  if (workshop && workshop.enrolled < workshop.slots) {
+    workshop.enrolled++;
+    renderTalleres();
+    alert(`¡Inscripción exitosa en "${workshop.name}"!`);
+  }
+};
+
 function renderConvocatorias(filter = 'all') {
   const container = document.getElementById('convocatorias-grid');
+  if (!container) return;
   container.innerHTML = '';
 
   const list = state.convocatorias.filter(c => filter === 'all' ? true : c.status === filter);
@@ -260,12 +349,12 @@ function renderConvocatorias(filter = 'all') {
       <div class="card-body">
         <div class="card-meta">
           <span class="card-tag">${c.type}</span>
-          <span style="color: #ef4444; font-weight: 600;">Límite: ${c.deadline}</span>
+          <span style="color: #ef4444; font-weight: 700;">Límite: ${c.deadline}</span>
         </div>
         <h3 class="card-title">${c.title}</h3>
-        <p style="font-size: 0.8rem; font-weight: 700; color: var(--electric-blue); margin-bottom: 0.5rem;">${c.org}</p>
+        <p style="font-size: 0.85rem; font-weight: 700; color: var(--electric-blue); margin-bottom: 0.5rem;">${c.org}</p>
         <p class="card-desc">${c.desc}</p>
-        <a href="${c.link}" target="_blank" rel="noopener" class="btn btn-primary">Postular / Más Información</a>
+        <a href="${c.link}" target="_blank" rel="noopener" class="btn btn-primary">Postular / Información</a>
       </div>
     `;
     container.appendChild(el);
@@ -274,6 +363,7 @@ function renderConvocatorias(filter = 'all') {
 
 function renderActividades() {
   const container = document.getElementById('actividades-grid');
+  if (!container) return;
   container.innerHTML = '';
 
   state.actividades.forEach((a) => {
@@ -288,74 +378,14 @@ function renderActividades() {
         <h3 class="card-title">${a.title}</h3>
         <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">📍 ${a.location}</p>
         <p class="card-desc">${a.desc}</p>
-        <button class="btn btn-primary" onclick="alert('Inscripción confirmada para: ${a.title}')">Inscribirme al Evento</button>
+        <button class="btn btn-primary" onclick="alert('Inscripción registrada para: ${a.title}')">Inscribirme al Evento</button>
       </div>
     `;
     container.appendChild(el);
   });
 }
 
-function renderTalleres() {
-  const container = document.getElementById('talleres-grid');
-  const tbody = document.getElementById('timetable-body');
-  container.innerHTML = '';
-  tbody.innerHTML = '';
-
-  // Render tarjetas
-  state.talleres.forEach((t) => {
-    const card = document.createElement('article');
-    card.className = 'card';
-    const isFull = t.enrolled >= t.slots;
-    card.innerHTML = `
-      <div class="card-body">
-        <div class="card-meta">
-          <span class="card-tag">${t.day} | ${t.start} - ${t.end}</span>
-          <span style="font-weight: 700; color: ${isFull ? '#ef4444' : '#10b981'}">
-            ${isFull ? 'Agotado' : `${t.slots - t.enrolled} cupos libres`}
-          </span>
-        </div>
-        <h3 class="card-title">${t.name}</h3>
-        <p style="font-size: 0.85rem; color: var(--electric-blue); font-weight: 600; margin-bottom: 0.35rem;">Docente: ${t.instructor}</p>
-        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem;">Lugar: ${t.room}</p>
-        <button class="btn btn-primary" ${isFull ? 'disabled style="opacity: 0.5;"' : ''} onclick="inscribirTaller('${t.id}')">
-          ${isFull ? 'Sin Cupos Disponibles' : 'Inscribir Taller'}
-        </button>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-
-  // Generación del Horario Académico
-  const blocks = ['14:00 - 16:00', '16:00 - 18:00', '18:00 - 20:00'];
-  blocks.forEach((block) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td><strong>${block}</strong></td>` + 
-      ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'].map(day => {
-        const found = state.talleres.find(t => t.day.toLowerCase() === day.toLowerCase());
-        if (found) {
-          return `<td><div class="workshop-slot"><h5>${found.name}</h5><p>${found.room}</p></div></td>`;
-        }
-        return `<td>-</td>`;
-      }).join('');
-    tbody.appendChild(tr);
-  });
-}
-
-window.inscribirTaller = function(id) {
-  if (!state.currentUser) {
-    alert('Debes iniciar sesión con tu correo institucional para reservar un cupo.');
-    document.getElementById('auth-modal').classList.add('active');
-    return;
-  }
-  const workshop = state.talleres.find(t => t.id === id);
-  if (workshop && workshop.enrolled < workshop.slots) {
-    workshop.enrolled++;
-    renderTalleres();
-    alert(`¡Inscripción exitosa en "${workshop.name}"!`);
-  }
-};
-
-// --- 6. AUTENTICACIÓN INSTITUCIONAL CON DOMINIO ESTRICTO ---
+// --- 5. AUTENTICACIÓN INSTITUCIONAL UCEN ---
 const authModal = document.getElementById('auth-modal');
 const authBtn = document.getElementById('auth-btn');
 const closeAuthModal = document.getElementById('close-auth-modal');
@@ -365,140 +395,29 @@ const authEmail = document.getElementById('auth-email');
 const authDomainHint = document.getElementById('auth-domain-hint');
 
 function updateAuthUI() {
+  if (!authBtn) return;
   if (state.currentUser) {
     authBtn.textContent = 'Cerrar Sesión';
     authBtn.className = 'btn btn-outline';
-    if (state.currentUser.role === 'admin') {
-      document.getElementById('bnav-admin').style.display = 'flex';
+    const bnavAdmin = document.getElementById('bnav-admin');
+    if (bnavAdmin && state.currentUser.role === 'admin') {
+      bnavAdmin.style.display = 'flex';
     }
   } else {
     authBtn.textContent = 'Ingresar';
     authBtn.className = 'btn btn-primary';
   }
-  authDomainHint.textContent = `Dominio institucional requerido: ${state.authorizedDomain}`;
+  if (authDomainHint) {
+    authDomainHint.textContent = `Dominio institucional requerido: ${state.authorizedDomain}`;
+  }
 }
 
-authBtn.addEventListener('click', () => {
-  if (state.currentUser) {
-    state.currentUser = null;
-    localStorage.removeItem('cn_user');
-    updateAuthUI();
-    alert('Sesión cerrada correctamente.');
-  } else {
-    authAlert.style.display = 'none';
-    authModal.classList.add('active');
-  }
-});
-
-closeAuthModal.addEventListener('click', () => {
-  authModal.classList.remove('active');
-});
-
-authForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const email = authEmail.value.trim().toLowerCase();
-  const domain = state.authorizedDomain.toLowerCase();
-
-  // Validación rigurosa de correo institucional
-  if (!email.endsWith(domain)) {
-    authAlert.textContent = `Acceso denegado: únicamente se permiten cuentas con terminación ${domain}`;
-    authAlert.style.display = 'block';
-    return;
-  }
-
-  // Determinación de rol: la cuenta que comience con 'admin' o 'rectoria' recibe perfil administrador
-  const role = (email.startsWith('admin') || email.startsWith('director')) ? 'admin' : 'student';
-
-  state.currentUser = { email, role, loggedAt: new Date().toISOString() };
-  localStorage.setItem('cn_user', JSON.stringify(state.currentUser));
-  
-  authModal.classList.remove('active');
-  authForm.reset();
-  updateAuthUI();
-  alert(`Bienvenido a CampusNexus (${role === 'admin' ? 'Administrador' : 'Estudiante'})`);
-});
-
-// --- 7. PANEL DE CONTROL Y CONFIGURACIÓN ADMINISTRATIVA ---
-document.getElementById('admin-domain-input').value = state.authorizedDomain;
-document.getElementById('admin-save-domain-btn').addEventListener('click', () => {
-  const newDomain = document.getElementById('admin-domain-input').value.trim();
-  if (!newDomain.startsWith('@')) {
-    alert('El dominio debe comenzar con @ (ejemplo: @ucen.cl)');
-    return;
-  }
-  state.authorizedDomain = newDomain;
-  localStorage.setItem('cn_domain', newDomain);
-  updateAuthUI();
-  alert(`Dominio institucional actualizado con éxito a: ${newDomain}`);
-});
-
-document.getElementById('form-create-convocatoria').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const newConvo = {
-    id: 'c_' + Date.now(),
-    title: document.getElementById('c-title').value.trim(),
-    org: document.getElementById('c-org').value.trim(),
-    type: document.getElementById('c-type').value,
-    deadline: document.getElementById('c-deadline').value,
-    desc: document.getElementById('c-desc').value.trim(),
-    link: document.getElementById('c-link').value.trim(),
-    status: 'vigente'
-  };
-
-  state.convocatorias.unshift(newConvo);
-  localStorage.setItem('cn_convocatorias', JSON.stringify(state.convocatorias));
-  renderConvocatorias();
-  e.target.reset();
-  alert('Convocatoria universitaria publicada en la plataforma.');
-});
-
-// --- 8. NAVEGACIÓN Y EVENTOS DE INTERFAZ ---
-document.querySelectorAll('.bnav-item').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-
-    btn.classList.add('active');
-    const target = btn.dataset.target;
-    document.getElementById(target).classList.add('active');
-  });
-});
-
-document.querySelectorAll('#view-news .pill-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#view-news .pill-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.activeCategory = btn.dataset.category;
-    
-    const titles = {
-      regional: 'Noticias Regionales (Coquimbo, La Serena, Ovalle, Vicuña)',
-      nacional: 'Noticias Nacionales (Chile, Educación, Ciencia)',
-      internacional: 'Noticias Internacionales'
-    };
-    document.getElementById('news-section-title').textContent = titles[state.activeCategory];
-    refreshAllNews();
-  });
-});
-
-document.getElementById('refresh-news-btn').addEventListener('click', refreshAllNews);
-
-// Modo Oscuro
-const themeToggle = document.getElementById('theme-toggle');
-themeToggle.addEventListener('click', () => {
-  document.body.classList.toggle('dark-mode');
-  const isDark = document.body.classList.contains('dark-mode');
-  document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
-  localStorage.setItem('cn_theme', isDark ? 'dark' : 'light');
-});
-
-if (localStorage.getItem('cn_theme') === 'dark') {
-  document.body.classList.add('dark-mode');
-  document.getElementById('theme-icon').textContent = '☀️';
-}
-
-// Inicialización general
-updateAuthUI();
-refreshAllNews();
-renderConvocatorias();
-renderActividades();
-renderTalleres();
+if (authBtn) {
+  authBtn.addEventListener('click', () => {
+    if (state.currentUser) {
+      state.currentUser = null;
+      localStorage.removeItem('cn_user');
+      updateAuthUI();
+      alert('Sesión cerrada correctamente.');
+    } else if (authModal) {
+      if
