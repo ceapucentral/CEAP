@@ -10,7 +10,20 @@ const state = {
   authorizedDomain: localStorage.getItem('cn_domain') || DEFAULT_DOMAIN,
   currentUser: JSON.parse(localStorage.getItem('cn_user')) || null,
   activeCategory: 'nacional',
-  news: [],
+  news: [
+    {
+      id: 'init-1',
+      title: 'Comienza período de inscripción a talleres deportivos y culturales CEAP UCEN',
+      link: '#',
+      source: 'CEAP UCEN',
+      subcategoria: 'Educación',
+      category: 'nacional',
+      date: 'Hoy',
+      description: 'Ya están disponibles los cupos para Vóleibol, Futsal Damas, Futsal Varones y Música en la sede.',
+      image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&auto=format&fit=crop',
+      isImportant: true
+    }
+  ],
   convocatorias: JSON.parse(localStorage.getItem('cn_convocatorias')) || [
     {
       id: 'c1',
@@ -103,7 +116,6 @@ const state = {
 };
 
 // --- 2. FILTRADO TEMÁTICO DE NOTICIAS ---
-// Solo se admiten estas temáticas para Chile y Educación
 const TEMAS_PERMITIDOS = {
   'Educación': ['educación', 'universidad', 'cruch', 'mineduc', 'estudiante', 'paes', 'arancel', 'gratuidad', 'beca', 'profesor', 'docente', 'académic'],
   'Política': ['política', 'congreso', 'senado', 'diputad', 'gobierno', 'reforma', 'ley', 'ministr', 'constituc', 'democracia', 'plebiscito', 'eleccion'],
@@ -143,8 +155,6 @@ function detectarTemaYFiltro(texto, categoria) {
   }
 
   const textoMin = texto.toLowerCase();
-
-  // Descartar automáticamente noticias policiales o farándula
   const descartar = ['homicidio', 'balead', 'apuñala', 'asaltan', 'detienen a sujeto', 'farándula', 'reality'];
   if (descartar.some(p => textoMin.includes(p))) {
     return { aceptada: false, subcategoria: null };
@@ -217,8 +227,6 @@ async function refreshAllNews() {
   const container = document.getElementById('news-grid');
   if (!container) return;
 
-  container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted);">Sincronizando noticias automáticas de CEAP UCEN...</div>`;
-
   const sources = RSS_SOURCES[state.activeCategory] || [];
   let aggregate = [];
 
@@ -227,10 +235,12 @@ async function refreshAllNews() {
     aggregate = [...aggregate, ...items];
   }
 
-  const uniqueNews = Array.from(new Map(aggregate.map(item => [item.link, item])).values());
-  uniqueNews.sort((a, b) => (b.isImportant ? 1 : 0) - (a.isImportant ? 1 : 0));
+  if (aggregate.length > 0) {
+    const uniqueNews = Array.from(new Map(aggregate.map(item => [item.link, item])).values());
+    uniqueNews.sort((a, b) => (b.isImportant ? 1 : 0) - (a.isImportant ? 1 : 0));
+    state.news = uniqueNews;
+  }
 
-  state.news = uniqueNews;
   renderNews();
 }
 
@@ -238,11 +248,6 @@ function renderNews() {
   const container = document.getElementById('news-grid');
   if (!container) return;
   container.innerHTML = '';
-
-  if (state.news.length === 0) {
-    container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 2rem; color: var(--text-muted);">No hay noticias recientes que cumplan los filtros temáticos en este momento.</div>`;
-    return;
-  }
 
   state.news.forEach((item) => {
     const article = document.createElement('article');
@@ -420,4 +425,94 @@ if (authBtn) {
       updateAuthUI();
       alert('Sesión cerrada correctamente.');
     } else if (authModal) {
-      if
+      if (authAlert) authAlert.style.display = 'none';
+      authModal.classList.add('active');
+    }
+  });
+}
+
+if (closeAuthModal && authModal) {
+  closeAuthModal.addEventListener('click', () => {
+    authModal.classList.remove('active');
+  });
+}
+
+if (authForm) {
+  authForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = authEmail.value.trim().toLowerCase();
+    const domain = state.authorizedDomain.toLowerCase();
+
+    if (!email.endsWith(domain)) {
+      if (authAlert) {
+        authAlert.textContent = `Acceso denegado: debes ingresar con correo institucional ${domain}`;
+        authAlert.style.display = 'block';
+      }
+      return;
+    }
+
+    const role = (email.startsWith('admin') || email.startsWith('ceap')) ? 'admin' : 'student';
+
+    state.currentUser = { email, role, loggedAt: new Date().toISOString() };
+    localStorage.setItem('cn_user', JSON.stringify(state.currentUser));
+
+    authModal.classList.remove('active');
+    authForm.reset();
+    updateAuthUI();
+    alert(`Bienvenido/a a CEAP UCEN (${role === 'admin' ? 'Administrador/a' : 'Estudiante'})`);
+  });
+}
+
+// --- 6. NAVEGACIÓN Y CONFIGURACIÓN ---
+document.querySelectorAll('.bnav-item').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+
+    btn.classList.add('active');
+    const target = btn.dataset.target;
+    const targetEl = document.getElementById(target);
+    if (targetEl) targetEl.classList.add('active');
+  });
+});
+
+document.querySelectorAll('#view-news .pill-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#view-news .pill-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.activeCategory = btn.dataset.category;
+
+    const titles = {
+      nacional: 'Chile y Educación (Política, Ciencias, Educación, Salud, Género y Cultura)',
+      regional: 'Noticias Regionales (Coquimbo, La Serena, Ovalle, Vicuña)',
+      internacional: 'Noticias Internacionales'
+    };
+    const titleEl = document.getElementById('news-section-title');
+    if (titleEl) titleEl.textContent = titles[state.activeCategory];
+    refreshAllNews();
+  });
+});
+
+const refreshNewsBtn = document.getElementById('refresh-news-btn');
+if (refreshNewsBtn) refreshNewsBtn.addEventListener('click', refreshAllNews);
+
+// Service Worker PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(() => console.log('CEAP UCEN Service Worker activo'))
+    .catch((err) => console.error('Error SW:', err));
+}
+
+// Auto-actualización cada 5 minutos
+setInterval(() => {
+  console.log('Sincronizando noticias automáticas...');
+  refreshAllNews();
+}, 300000);
+
+// --- 7. INICIALIZACIÓN INMEDIATA EN PANTALLA ---
+updateAuthUI();
+renderNews();
+renderConvocatorias();
+renderActividades();
+renderTalleres();
+refreshAllNews();
