@@ -1,4 +1,4 @@
-const CACHE_NAME = 'CEAP ucentral-v1';
+const CACHE_NAME = 'ceap-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
